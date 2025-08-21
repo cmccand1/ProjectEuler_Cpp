@@ -1,8 +1,8 @@
+#include "euler/problem.hpp"
+
 #include <cassert>
 #include <string>
 #include <unordered_map>
-
-#include "euler/problem.hpp"
 
 class NumberStringBuilder {
   private:

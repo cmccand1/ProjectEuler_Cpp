@@ -81,10 +81,8 @@ static void run_one(const int id) {
       if (ans == expected) {
         note = " [OK]";
       } else {
-        std::cerr << "Incorrect answer for Problem " << id << " (" << prob->
-            name()
-            << ")\n  expected: '" << expected << "'\n  got:      '" << ans <<
-            "'\n";
+        std::cerr << "Incorrect answer for Problem " << id << " (" << prob->name()
+                  << ")\n  expected: '" << expected << "'\n  got:      '" << ans << "'\n";
         assert((ans == expected) && "Incorrect Project Euler answer");
       }
     }
@@ -111,8 +109,12 @@ int main(const int argc, char **argv) {
   }
   try {
     run_one(std::stoi(arg));
+  } catch (const std::exception& e) {
+    std::cerr << "Error parsing problem id '" << arg << "': " << e.what() << "\n";
+    return 1;
   } catch (...) {
-    std::cerr << "Invalid problem id: " << arg << "\n";
+    std::cerr << "Unknown error parsing problem id: " << arg << "\n";
+    return 1;
   }
   return 0;
 }
