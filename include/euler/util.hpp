@@ -6,8 +6,9 @@
 #include <cmath>
 #include <concepts>
 #include <type_traits>
+#include <string>
+#include <ranges>
 #include <boost/multiprecision/cpp_int.hpp>
-#include <__ranges/reverse_view.h>
 
 /**
  * The sieve of eratosthenes is a list of all the primes ≤ n.

@@ -1,4 +1,5 @@
 #include "euler/util.hpp"
+#include <string>
 
 std::vector<bool> sieve_of_eratosthenes(int n) {
   assert(n > 0);
@@ -32,5 +33,5 @@ long long nth_prime(int n) {
       return i;
     }
   }
-  throw std::runtime_error("");
+  throw std::runtime_error("Failed to find the " + std::to_string(n) + "-th prime with current estimate");
 }
