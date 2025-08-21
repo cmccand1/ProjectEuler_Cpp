@@ -1,10 +1,9 @@
+#include "euler/problem.hpp"
+#include "euler/util.hpp"
+
 #include <cassert>
 #include <iostream>
-
-#include "euler/problem.hpp"
 #include <string>
-
-#include "euler/util.hpp"
 
 class P007 final : public IProblem {
   public:

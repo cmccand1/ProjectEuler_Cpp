@@ -6,17 +6,18 @@
 #include <cmath>
 #include <concepts>
 #include <type_traits>
+#include <string>
+#include <ranges>
 #include <boost/multiprecision/cpp_int.hpp>
-#include <__ranges/reverse_view.h>
 
 /**
  * The sieve of eratosthenes is a list of all the primes ≤ n.
  *
  * @param n the upper bound of the sieve
-* @return a boolean array where true means the integer represented by
+ * @return a boolean array where true means the integer represented by
  * the index is prime and false means it is composite
  */
-std::vector<bool> sieve_of_eratosthenes(int n);
+[[nodiscard]] std::vector<bool> sieve_of_eratosthenes(int n);
 
 /**
  * Finds the sum of the digits of an arbitrarily large integer
@@ -24,7 +25,7 @@ std::vector<bool> sieve_of_eratosthenes(int n);
  * @param n the integer whose digit sum will be found
  * @return the digit sum as an arbitrarily large integer
  */
-inline boost::multiprecision::cpp_int digit_sum(boost::multiprecision::cpp_int n) {
+[[nodiscard]] inline boost::multiprecision::cpp_int digit_sum(boost::multiprecision::cpp_int n) {
   boost::multiprecision::cpp_int sum = 0;
   n = boost::multiprecision::abs(n);
   while (n) {
@@ -35,12 +36,14 @@ inline boost::multiprecision::cpp_int digit_sum(boost::multiprecision::cpp_int n
 }
 
 /**
- * You already know...
+ * Calculate factorial of n using arbitrary precision arithmetic
+ * @param n the number to calculate factorial for (must be positive)
+ * @return n! as an arbitrarily large integer
  */
-inline boost::multiprecision::cpp_int factorial(int n) {
-  assert(n > 0);
+[[nodiscard]] inline boost::multiprecision::cpp_int factorial(int n) {
+  assert(n >= 0);
   boost::multiprecision::cpp_int res = 1;
-  for (int i = 2; i <= n; i++) {
+  for (int i = 2; i <= n; ++i) {
     res *= i;
   }
   return res;
@@ -51,7 +54,7 @@ inline boost::multiprecision::cpp_int factorial(int n) {
  * @param n the index of the prime number to find
  * @return the nth prime number
  */
-long long nth_prime(int n);
+[[nodiscard]] long long nth_prime(int n);
 
 /**
  * Find the nth Fibonacci number.
@@ -61,7 +64,7 @@ long long nth_prime(int n);
  * @param n the index of the fibonacci number to find
  * @return the nth fibonacci number
  */
-inline long long fib(long long n) {
+[[nodiscard]] inline long long fib(long long n) noexcept {
   assert(n >= 0);
   constexpr auto phi = std::numbers::phi_v<long double>;
   const auto result = std::llround(
@@ -74,7 +77,7 @@ inline long long fib(long long n) {
  * @param fib the Fibonacci number whose index to find
  * @return the index of fib
  */
-inline long long inverse_fib(long long fib) {
+[[nodiscard]] inline long long inverse_fib(long long fib) noexcept {
   assert(fib >= 1);
   constexpr auto phi = std::numbers::phi_v<long double>;
   // calculate the log (base phi) of sqrt(5)*fib using a change of base
@@ -89,12 +92,12 @@ inline long long inverse_fib(long long fib) {
  * @param n the numbers of natural numbers to sum
  * @return the sum
  */
-inline int natural_sum(int n) {
+[[nodiscard]] inline int natural_sum(int n) noexcept {
   assert(n >= 0);
   return n * (n + 1) / 2;
 }
 
-inline int sum_of_squares(int n) {
+[[nodiscard]] inline int sum_of_squares(int n) noexcept {
   assert(n >= 0);
   return (n * (n + 1) * (2 * n + 1)) / 6;
 }
@@ -104,11 +107,13 @@ inline int sum_of_squares(int n) {
  * @param n the integer to check
  * @return true if prime, false otherwise
  */
-inline bool is_prime(int n) {
+[[nodiscard]] inline bool is_prime(int n) noexcept {
   if (n < 2) return false;
   if (n == 2) return true;
   if (n % 2 == 0) return false;
-  for (int i = 3; i < std::ceil(std::sqrt(n)); i += 2) {
+  
+  const int sqrt_n = static_cast<int>(std::sqrt(n));
+  for (int i = 3; i <= sqrt_n; i += 2) {
     if (n % i == 0) return false;
   }
   return true;

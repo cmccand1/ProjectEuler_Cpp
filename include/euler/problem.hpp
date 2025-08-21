@@ -15,6 +15,10 @@
 // This is the Strategy pattern (each IProblem is a strategy for producing an
 // answer) plus a lightweight Factory Method/Registry to construct a problem by number.
 
+/**
+ * Interface for all Project Euler problem implementations.
+ * Each problem is a strategy that can produce a string answer.
+ */
 struct IProblem {
   virtual ~IProblem() = default;
 
@@ -24,6 +28,10 @@ struct IProblem {
   virtual std::string solve() = 0;
 };
 
+/**
+ * Registry for Project Euler problem implementations.
+ * Uses the Singleton pattern to maintain a global registry of problem factories.
+ */
 class ProblemRegistry {
   public:
     using Factory = std::function<std::unique_ptr<IProblem>()>;
@@ -36,13 +44,13 @@ class ProblemRegistry {
     void add(const int id, Factory f) { factories_[id] = std::move(f); }
 
     [[nodiscard]] std::unique_ptr<IProblem> make(const int id) const {
-      if (const auto it = factories_.find(id); it != factories_.end())
-        return (it->
-          second)();
+      if (const auto it = factories_.find(id); it != factories_.end()) {
+        return (it->second)();
+      }
       return nullptr;
     }
 
-    std::vector<int> ids() const {
+    [[nodiscard]] std::vector<int> ids() const {
       std::vector<int> out;
       out.reserve(factories_.size());
       for (const auto &key : factories_ | std::views::keys) out.push_back(key);
