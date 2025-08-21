@@ -1,0 +1,2 @@
+/usr/bin/ar qc libeuler_common.a CMakeFiles/euler_common.dir/src/common/util.cpp.o
+/usr/bin/ranlib libeuler_common.a
