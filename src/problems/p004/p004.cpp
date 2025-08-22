@@ -9,7 +9,7 @@ class P004 final : public IProblem {
       return "Longest Palindromic Product";
     }
 
-    std::string solve() override {
+    [[nodiscard]] std::string solve() override {
       long long max_pal = -1;
       for (int i = 999; i > 99; --i) {
         for (int j = i; j > 99; --j) {
@@ -24,4 +24,8 @@ class P004 final : public IProblem {
     }
 };
 
-const REGISTER_PROBLEM(4, P004);
+const REGISTER_PROBLEM (
+4
+,
+P004
+);

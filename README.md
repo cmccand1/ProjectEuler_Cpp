@@ -1,4 +1,5 @@
 How this project is structured:
+
 ```
 euler-cpp/
 ├─ CMakeLists.txt
@@ -31,11 +32,14 @@ euler-cpp/
 └─ README.md
 ```
 
-Each problem sits in src/problems/pNNN (zero-padded width 3) and compiles as a tiny object library.
+Each problem sits in src/problems/pNNN (zero-padded width 3) and compiles as a
+tiny object library.
 
-A single euler runner links all problem objects and picks which Strategy (problem) to run at runtime via a Registry + Factory Method.
+A single euler runner links all problem objects and picks which Strategy (
+problem) to run at runtime via a Registry + Factory Method.
 
-Shared math goes in euler_common, so you don’t duplicate sieves, prime tests, big-int adapters, etc.
+Shared math goes in euler_common, so you don’t duplicate sieves, prime tests,
+big-int adapters, etc.
 
 Unit tests live beside (but separate from) sources.
 
@@ -44,7 +48,8 @@ Each problem subdir adds an object library and bubbles its objects up
 To make new problem script executable: chmod +x scripts/new_problem.sh
 
 - Workflow
-    - Add a new solution: `./scripts/new_problem.sh 42` → edit `src/problems/p042/p042.cpp.`
+    - Add a new solution: `./scripts/new_problem.sh 42` → edit
+      `src/problems/p042/p042.cpp.`
     - Build: `cmake -S . -B build && cmake --build build -j`.
     - Run one: `./build/euler 42`.
     - List: `./build/euler --list`.

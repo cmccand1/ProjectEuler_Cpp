@@ -11,7 +11,7 @@ class P016 final : public IProblem {
     }
 
 
-    std::string solve() override {
+    [[nodiscard]] std::string solve() override {
       using boost::multiprecision::cpp_int;
       const cpp_int base = 2;
       constexpr int exponent = 1000;
@@ -21,4 +21,8 @@ class P016 final : public IProblem {
     }
 };
 
-const REGISTER_PROBLEM(16, P016);
+const REGISTER_PROBLEM (
+16
+,
+P016
+);

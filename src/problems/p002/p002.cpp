@@ -10,7 +10,7 @@ class P002 final : public IProblem {
       return "Even Fibonacci Numbers";
     }
 
-    std::string solve() override {
+    [[nodiscard]] std::string solve() override {
       long long sum = 0, result = 0;
       for (int i = 0; (result = fib(i)) < 4000000; ++i) {
         if (result % 2 == 0) sum += result;
@@ -19,4 +19,8 @@ class P002 final : public IProblem {
     }
 };
 
-const REGISTER_PROBLEM(002, P002);
+const REGISTER_PROBLEM (
+002
+,
+P002
+);

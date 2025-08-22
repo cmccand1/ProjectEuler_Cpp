@@ -40,7 +40,7 @@ cat > "$dir/p${num}.cpp" <<EOF
 class P${num} final : public IProblem {
 public:
   [[nodiscard]] std::string name() const override { return "${pname_escaped}"; }
-  std::string solve() override {
+  [[nodiscard]] std::string solve() override {
     // TODO: implement
     return "TODO";
   }

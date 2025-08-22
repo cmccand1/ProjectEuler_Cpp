@@ -9,7 +9,7 @@ class P010 final : public IProblem {
       return "Summation of Primes";
     }
 
-    std::string solve() override {
+    [[nodiscard]] std::string solve() override {
       constexpr int num = 2'000'000;
       auto sieve = sieve_of_eratosthenes(2'000'000);
       size_t sum = 2;

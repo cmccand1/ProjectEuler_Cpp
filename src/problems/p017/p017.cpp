@@ -107,7 +107,7 @@ class P017 final : public IProblem {
       return "Number Letter Counts";
     }
 
-    std::string solve() override {
+    [[nodiscard]] std::string solve() override {
       size_t count = 0;
       for (int i = 1; i <= 1000; ++i) {
         count += NumberStringBuilder(i).length();
@@ -117,4 +117,8 @@ class P017 final : public IProblem {
 };
 
 
-const REGISTER_PROBLEM(17, P017);
+const REGISTER_PROBLEM (
+17
+,
+P017
+);

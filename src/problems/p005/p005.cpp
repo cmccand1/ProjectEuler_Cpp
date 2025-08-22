@@ -7,7 +7,7 @@ class P005 final : public IProblem {
       return "Smallest Multiple";
     }
 
-    std::string solve() override {
+    [[nodiscard]] std::string solve() override {
       int candidate = 40; // start at first multiple of 20
       bool found = false;
       while (!found) {
@@ -29,4 +29,8 @@ class P005 final : public IProblem {
     }
 };
 
-const REGISTER_PROBLEM(5, P005);
+const REGISTER_PROBLEM (
+5
+,
+P005
+);

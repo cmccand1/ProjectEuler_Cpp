@@ -26,13 +26,24 @@
 #   object libraries with a forced inclusion pattern via GLOBAL property.
 # - target_sources(euler PRIVATE ${PROBLEM_OBJECTS}) is kept for clarity; it is redundant given
 #   the objects are already listed in add_executable, but harmless.
-
 cmake_minimum_required(VERSION 3.23)
 project(ProjectEuler_Cpp LANGUAGES CXX)
+
+# Set CMake policies for modern behavior
+cmake_policy(SET CMP0167 NEW)
 
 # Use modern C++
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Add compiler warnings for better code quality
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    add_compile_options(-Wall -Wextra -Wpedantic -Wshadow -Wconversion -Wsign-conversion)
+endif ()
+if (MSVC)
+    add_compile_options(/W4)
+endif ()
 
 # Common code shared by all problems
 add_library(euler_common STATIC
@@ -42,27 +53,19 @@ add_library(euler_common STATIC
 target_include_directories(euler_common PUBLIC ${CMAKE_SOURCE_DIR}/include)
 
 # Boost for arbitrary precision (Boost.Multiprecision is header-only by default)
-# Prefer imported targets; fall back to include dirs if older FindBoost is used.
 find_package(Boost 1.70 REQUIRED)
-if (TARGET Boost::boost)
-    target_link_libraries(euler_common PUBLIC Boost::boost)
-else()
-    target_include_directories(euler_common PUBLIC ${Boost_INCLUDE_DIRS})
-endif()
+target_link_libraries(euler_common PUBLIC Boost::boost)
 
 # Add all problems; each subdir appends its OBJECT library to the GLOBAL property
 add_subdirectory(src/problems)
-
 # Collect every problem’s object file(s) that were appended in subdirectories
 get_property(PROBLEM_OBJECTS GLOBAL PROPERTY PROBLEM_OBJECTS)
-
 # Main executable: include main and all problem objects so registration runs
 add_executable(euler src/main.cpp ${PROBLEM_OBJECTS})
 # Link common utilities
 target_link_libraries(euler PRIVATE euler_common)
 # Provide absolute path to answers.txt for the runtime check
 target_compile_definitions(euler PRIVATE ANSWERS_TXT_PATH="${CMAKE_SOURCE_DIR}/answers.txt")
-
 # Redundant but explicit: also add problem objects as sources
 # (safe even if PROBLEM_OBJECTS is empty)
 target_sources(euler PRIVATE ${PROBLEM_OBJECTS})

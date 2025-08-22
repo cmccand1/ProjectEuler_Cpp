@@ -10,10 +10,9 @@ class P020 final : public IProblem {
       return "Factorial Digit Sum";
     }
 
-    std::string solve() override {
+    [[nodiscard]] std::string solve() override {
       return boost::multiprecision::to_string(digit_sum(factorial(100)));
     }
-
 };
 
 const REGISTER_PROBLEM(20, P020);

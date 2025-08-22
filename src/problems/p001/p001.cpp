@@ -7,7 +7,7 @@ class P001 final : public IProblem {
       return "Multiples of 3 or 5";
     }
 
-    std::string solve() override {
+    [[nodiscard]] std::string solve() override {
       long long sum = 0;
       for (int i = 1; i < 1000; ++i) {
         if (i % 3 == 0 || i % 5 == 0) {
@@ -18,4 +18,8 @@ class P001 final : public IProblem {
     }
 };
 
-const REGISTER_PROBLEM(001, P001);
+const REGISTER_PROBLEM (
+001
+,
+P001
+);

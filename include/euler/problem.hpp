@@ -21,7 +21,7 @@ struct IProblem {
   [[nodiscard]] virtual std::string name() const = 0;
 
   // Return the final answer as a string; print/log timing elsewhere.
-  virtual std::string solve() = 0;
+  [[nodiscard]] virtual std::string solve() = 0;
 };
 
 class ProblemRegistry {
@@ -42,7 +42,7 @@ class ProblemRegistry {
       return nullptr;
     }
 
-    std::vector<int> ids() const {
+    [[nodiscard]] std::vector<int> ids() const {
       std::vector<int> out;
       out.reserve(factories_.size());
       for (const auto &key : factories_ | std::views::keys) out.push_back(key);

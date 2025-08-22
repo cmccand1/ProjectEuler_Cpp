@@ -9,7 +9,7 @@ class P003 final : public IProblem {
       return "Largest Prime Factor";
     }
 
-    std::string solve() override {
+    [[nodiscard]] std::string solve() override {
       const long long largestPrime = largestPrimeFactor(600'851'475'143);
       return std::to_string(largestPrime);
     }
