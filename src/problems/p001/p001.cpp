@@ -18,8 +18,7 @@ class P001 final : public IProblem {
     }
 };
 
-const REGISTER_PROBLEM (
-001
-,
-P001
+const REGISTER_PROBLEM(
+  001,
+  P001
 );

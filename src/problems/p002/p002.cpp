@@ -11,16 +11,16 @@ class P002 final : public IProblem {
     }
 
     [[nodiscard]] std::string solve() override {
-      long long sum = 0, result = 0;
-      for (int i = 0; (result = fib(i)) < 4000000; ++i) {
+      constexpr std::size_t N = 4'000'000;
+      std::size_t sum = 0, result = 0;
+      for (std::size_t i = 0; (result = fib(i)) < N; ++i) {
         if (result % 2 == 0) sum += result;
       }
       return std::to_string(sum);
     }
 };
 
-const REGISTER_PROBLEM (
-002
-,
-P002
+const REGISTER_PROBLEM(
+  002,
+  P002
 );

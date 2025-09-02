@@ -1,71 +1,166 @@
 # Top-level CMake for ProjectEuler_Cpp
-#
-# Overview
-# - euler_common: Common utilities used by all problems.
-# - Problems: Each problem (pNNN) is built as an OBJECT library in src/problems/pNNN
-#   and appends its object files to a GLOBAL CMake property called PROBLEM_OBJECTS.
-# - euler (executable): Links euler_common and all problem object files so that
-#   each problem’s static Registrar runs and registers itself in the runtime registry.
-#
-# Why a GLOBAL property?
-# Regular CMake variables do not naturally accumulate across nested add_subdirectory calls
-# without careful PARENT_SCOPE plumbing and ordering. Each problem subdir does:
-#   set_property(GLOBAL APPEND PROPERTY PROBLEM_OBJECTS $<TARGET_OBJECTS:pNNN>)
-# Then, at the top-level, we gather them with get_property(... GLOBAL PROPERTY PROBLEM_OBJECTS)
-# and pass them into the euler executable. This guarantees all problem objects are linked,
-# ensuring their static registration code is emitted and executed at runtime.
-#
-# Adding a new problem
-# - Create src/problems/pXYZ with pXYZ.cpp and a CMakeLists.txt that builds an OBJECT library
-#   and appends $<TARGET_OBJECTS:pXYZ> to the GLOBAL PROBLEM_OBJECTS property (see p001 for reference).
-# - Reconfigure and build; the problem will be linked into euler automatically and appear under
-#   --list and run under --all.
-#
-# Notes
-# - On macOS and Linux, the explicit whole-archive/force_load flags are unnecessary when using
-#   object libraries with a forced inclusion pattern via GLOBAL property.
-# - target_sources(euler PRIVATE ${PROBLEM_OBJECTS}) is kept for clarity; it is redundant given
-#   the objects are already listed in add_executable, but harmless.
+# -----------------------------------------------------------------------------
+#  Structure
+#   1. Minimum + project + policies
+#   2. Global language / standard settings
+#   3. Build options (user toggles)
+#   4. Helper logic (warnings, sanitizers, LTO, tooling, constexpr limits)
+#   5. Dependencies
+#   6. Targets
+#       6.1  Common library (euler_common)
+#       6.2  Problem object libraries aggregation
+#       6.3  Main executable (euler)
+#   7. Tooling (clang-tidy, etc.)
+#   8. Developer summary (optional)
+# -----------------------------------------------------------------------------
+#  Design notes
+#   - Each problem pNNN is an OBJECT library that appends its objects to a
+#     GLOBAL property PROBLEM_OBJECTS. We then link those objects into the
+#     main executable so static registration runs.
+#   - GLOBAL property avoids fragile parent-scope variable plumbing.
+#   - Options are centralized; feature logic is applied in one place for clarity.
+# -----------------------------------------------------------------------------
+
+# 1. Minimum + project + policies ------------------------------------------------
 cmake_minimum_required(VERSION 3.23)
 project(ProjectEuler_Cpp LANGUAGES CXX)
 
-# Set CMake policies for modern behavior
-cmake_policy(SET CMP0167 NEW)
+cmake_policy(SET CMP0167 NEW) # modern find_package(<PkgName> ...) behavior
 
-# Use modern C++
-set(CMAKE_CXX_STANDARD 20)
+# 2. Global language / standard settings -----------------------------------------
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Add compiler warnings for better code quality
+# 3. Build options (user toggles) ------------------------------------------------
+option(ENABLE_WARNINGS_AS_ERRORS "Treat warnings as errors" ON)
+option(ENABLE_ASAN "Enable AddressSanitizer (+LeakSan if available)" ON)
+option(ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer" ON)
+option(ENABLE_TSAN "Enable ThreadSanitizer (mutually exclusive with ASAN)" OFF)
+option(ENABLE_LTO "Enable Link-Time Optimization (IPO) in Release/RelWithDebInfo" OFF)
+option(ENABLE_CLANG_TIDY "Enable clang-tidy if available" OFF)
+option(ENABLE_CONSTEXPR_LIMIT_TWEAKS "Increase compiler constexpr evaluation limits (may slow builds)" ON)
+
+# 4. Helper logic ----------------------------------------------------------------
+# 4.1 Warnings
+set(PROJECT_WARNING_FLAGS)
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    add_compile_options(-Wall -Wextra -Wpedantic -Wshadow -Wconversion -Wsign-conversion)
+    list(APPEND PROJECT_WARNING_FLAGS -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Wsign-conversion)
+elseif (MSVC)
+    list(APPEND PROJECT_WARNING_FLAGS /W4 /permissive-)
 endif ()
-if (MSVC)
-    add_compile_options(/W4)
+if (ENABLE_WARNINGS_AS_ERRORS)
+    if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        list(APPEND PROJECT_WARNING_FLAGS -Werror)
+    elseif (MSVC)
+        list(APPEND PROJECT_WARNING_FLAGS /WX)
+    endif ()
 endif ()
 
-# Common code shared by all problems
+# 4.2 Sanitizers (applied to all build targets we create)
+if (ENABLE_ASAN AND ENABLE_TSAN)
+    message(FATAL_ERROR "ENABLE_ASAN and ENABLE_TSAN are mutually exclusive.")
+endif ()
+set(SANITIZER_COMPILE_FLAGS)
+set(SANITIZER_LINK_FLAGS)
+if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
+endif ()
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    if (ENABLE_ASAN AND (CMAKE_BUILD_TYPE MATCHES "Debug|RelWithDebInfo"))
+        list(APPEND SANITIZER_COMPILE_FLAGS -fsanitize=address -fno-omit-frame-pointer)
+        list(APPEND SANITIZER_LINK_FLAGS -fsanitize=address)
+    elseif (ENABLE_TSAN AND (CMAKE_BUILD_TYPE MATCHES "Debug|RelWithDebInfo"))
+        list(APPEND SANITIZER_COMPILE_FLAGS -fsanitize=thread -fno-omit-frame-pointer)
+        list(APPEND SANITIZER_LINK_FLAGS -fsanitize=thread)
+    endif ()
+    if (ENABLE_UBSAN AND (CMAKE_BUILD_TYPE MATCHES "Debug|RelWithDebInfo"))
+        list(APPEND SANITIZER_COMPILE_FLAGS -fsanitize=undefined)
+        list(APPEND SANITIZER_LINK_FLAGS -fsanitize=undefined)
+    endif ()
+endif ()
+
+# 4.3 Constexpr evaluation limit tweaks
+set(CONSTEXPR_LIMIT_FLAGS)
+if (ENABLE_CONSTEXPR_LIMIT_TWEAKS)
+    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")  # Matches Clang and AppleClang
+        list(APPEND CONSTEXPR_LIMIT_FLAGS -fconstexpr-steps=200000000 -fconstexpr-depth=4096)
+    elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        list(APPEND CONSTEXPR_LIMIT_FLAGS -fconstexpr-ops-limit=1000000000 -fconstexpr-depth=4096 -fconstexpr-loop-limit=100000000)
+    elseif (MSVC)
+        list(APPEND CONSTEXPR_LIMIT_FLAGS /constexpr:steps200000000 /constexpr:depth4096)
+    endif ()
+endif ()
+
+# Global fallback (affects every target, including OBJECT libs)
+add_compile_options(${PROJECT_WARNING_FLAGS} ${SANITIZER_COMPILE_FLAGS} ${CONSTEXPR_LIMIT_FLAGS})
+add_link_options(${SANITIZER_LINK_FLAGS})
+
+# 4.4 Function to apply common compile/link flags to a target
+function(apply_project_defaults tgt)
+    target_compile_options(${tgt} PRIVATE
+            ${PROJECT_WARNING_FLAGS}
+            ${SANITIZER_COMPILE_FLAGS}
+            ${CONSTEXPR_LIMIT_FLAGS}
+    )
+    target_link_options(${tgt} PRIVATE ${SANITIZER_LINK_FLAGS})
+endfunction()
+
+# 4.5 LTO (IPO)
+if (ENABLE_LTO)
+    include(CheckIPOSupported)
+    check_ipo_supported(RESULT ipo_ok OUTPUT ipo_msg)
+    if (ipo_ok)
+        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
+        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO ON)
+    else ()
+        message(WARNING "IPO/LTO requested but not supported: ${ipo_msg}")
+    endif ()
+endif ()
+
+# 5. Dependencies ----------------------------------------------------------------
+find_package(Boost 1.70 REQUIRED)
+
+# 6. Targets ---------------------------------------------------------------------
+# 6.1 Common library
 add_library(euler_common STATIC
         src/common/util.cpp
 )
-# Public include path for headers under include/
+set_target_properties(euler_common PROPERTIES OUTPUT_NAME euler_common)
 target_include_directories(euler_common PUBLIC ${CMAKE_SOURCE_DIR}/include)
-
-# Boost for arbitrary precision (Boost.Multiprecision is header-only by default)
-find_package(Boost 1.70 REQUIRED)
 target_link_libraries(euler_common PUBLIC Boost::boost)
+apply_project_defaults(euler_common)
 
-# Add all problems; each subdir appends its OBJECT library to the GLOBAL property
+# 6.2 Problems aggregation
 add_subdirectory(src/problems)
-# Collect every problem’s object file(s) that were appended in subdirectories
 get_property(PROBLEM_OBJECTS GLOBAL PROPERTY PROBLEM_OBJECTS)
-# Main executable: include main and all problem objects so registration runs
+
+# 6.3 Main executable
 add_executable(euler src/main.cpp ${PROBLEM_OBJECTS})
-# Link common utilities
 target_link_libraries(euler PRIVATE euler_common)
-# Provide absolute path to answers.txt for the runtime check
 target_compile_definitions(euler PRIVATE ANSWERS_TXT_PATH="${CMAKE_SOURCE_DIR}/answers.txt")
-# Redundant but explicit: also add problem objects as sources
-# (safe even if PROBLEM_OBJECTS is empty)
 target_sources(euler PRIVATE ${PROBLEM_OBJECTS})
+apply_project_defaults(euler)
+
+# 7. Tooling ---------------------------------------------------------------------
+if (ENABLE_CLANG_TIDY)
+    find_program(CLANG_TIDY_EXE NAMES clang-tidy)
+    if (CLANG_TIDY_EXE)
+        message(STATUS "clang-tidy enabled: ${CLANG_TIDY_EXE}")
+        set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_EXE}")
+    else ()
+        message(WARNING "ENABLE_CLANG_TIDY=ON but clang-tidy not found")
+    endif ()
+endif ()
+
+# 8. Developer summary -----------------------------------------------------------
+message(STATUS "Config summary:")
+message(STATUS "  Build type              : ${CMAKE_BUILD_TYPE}")
+message(STATUS "  Warnings as errors      : ${ENABLE_WARNINGS_AS_ERRORS}")
+message(STATUS "  ASan                    : ${ENABLE_ASAN}")
+message(STATUS "  UBSan                   : ${ENABLE_UBSAN}")
+message(STATUS "  TSan                    : ${ENABLE_TSAN}")
+message(STATUS "  LTO/IPO                 : ${ENABLE_LTO}")
+message(STATUS "  clang-tidy              : ${ENABLE_CLANG_TIDY}")
+message(STATUS "  Constexpr limit tweaks  : ${ENABLE_CONSTEXPR_LIMIT_TWEAKS}")
+message(STATUS "  Problem objects linked  : ${PROBLEM_OBJECTS}")

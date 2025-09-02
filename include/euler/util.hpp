@@ -9,6 +9,24 @@
 #include <boost/multiprecision/cpp_int.hpp>
 #include <__ranges/reverse_view.h>
 
+using boost::multiprecision::cpp_int;
+
+template<std::size_t N>
+constexpr std::array<bool, N + 1> sieve_array() {
+  std::array<bool, N + 1> is_prime{};
+  is_prime.fill(true);
+  if constexpr (N >= 0) is_prime[0] = false;
+  if constexpr (N >= 1) is_prime[1] = false;
+  for (std::size_t i = 2; i * i <= N; ++i) {
+    if (is_prime[i]) {
+      for (std::size_t j = i * i; j <= N; j += i) {
+        is_prime[j] = false;
+      }
+    }
+  }
+  return is_prime;
+}
+
 /**
  * The sieve of eratosthenes is a list of all the primes ≤ n.
  *
@@ -24,9 +42,8 @@
  * @param n the integer whose digit sum will be found
  * @return the digit sum as an arbitrarily large integer
  */
-[[nodiscard]] inline boost::multiprecision::cpp_int digit_sum(
-  boost::multiprecision::cpp_int n) {
-  boost::multiprecision::cpp_int sum = 0;
+[[nodiscard]] inline cpp_int digit_sum(cpp_int n) {
+  cpp_int sum = 0;
   n = boost::multiprecision::abs(n);
   while (n) {
     sum += n % 10;
@@ -35,12 +52,30 @@
   return sum;
 }
 
+constexpr std::size_t digit_count(unsigned long long n) {
+  std::size_t count = 0;
+  while (n > 0) {
+    n /= 10;
+    ++count;
+  }
+  return count;
+}
+
+inline std::size_t digit_count(cpp_int n) {
+  std::size_t count = 0;
+  while (n > 0) {
+    n /= 10;
+    ++count;
+  }
+  return count;
+}
+
 /**
  * You already know...
  */
-[[nodiscard]] inline boost::multiprecision::cpp_int factorial(int n) {
+[[nodiscard]] inline cpp_int factorial(int n) {
   assert(n > 0);
-  boost::multiprecision::cpp_int res = 1;
+  cpp_int res = 1;
   for (int i = 2; i <= n; i++) {
     res *= i;
   }
@@ -62,12 +97,26 @@
  * @param n the index of the fibonacci number to find
  * @return the nth fibonacci number
  */
-[[nodiscard]] inline long long fib(long long n) {
-  assert(n >= 0);
+[[nodiscard]] inline std::size_t fib(std::size_t n) {
   constexpr auto phi = std::numbers::phi_v<long double>;
   const auto result = std::llround(
     std::pow(phi, static_cast<long double>(n)) / std::sqrt(5.0L));
-  return result;
+  return static_cast<std::size_t>(result);
+}
+
+// Returns { F(n), F(n+1) }
+static std::pair<cpp_int, cpp_int> fib_pair(unsigned long long n) {
+  if (n == 0) return {0, 1};
+  auto [a, b] = fib_pair(n >> 1); // a=F(k), b=F(k+1)
+  cpp_int c = a * ((b << 1) - a); // F(2k) = F(k) * (2F(k+1) - F(k))
+  cpp_int d = a * a + b * b; // F(2k+1) = F(k)^2 + F(k+1)^2
+  return (n & 1)
+           ? std::pair{d, c + d} // odd:  {F(2k+1), F(2k+2)}
+           : std::pair{c, d}; // even: {F(2k),   F(2k+1)}
+}
+
+[[nodiscard]] inline cpp_int big_fib(unsigned long long n) {
+  return fib_pair(n).first; // F(n)
 }
 
 /**
@@ -90,7 +139,7 @@
  * @param n the numbers of natural numbers to sum
  * @return the sum
  */
-[[nodiscard]] inline unsigned long natural_sum(std::size_t n) {
+[[nodiscard]] constexpr unsigned long natural_sum(std::size_t n) {
   return n * (n + 1) / 2;
 }
 
@@ -99,7 +148,7 @@
  * @param n how many numbers
  * @return the sum of squares
  */
-[[nodiscard]] inline unsigned long sum_of_squares(std::size_t n) {
+[[nodiscard]] constexpr unsigned long sum_of_squares(std::size_t n) {
   return (n * (n + 1) * (2 * n + 1)) / 6;
 }
 
@@ -108,12 +157,11 @@
  * @param n the integer to check
  * @return true if prime, false otherwise
  */
-[[nodiscard]] inline bool is_prime(std::size_t n) noexcept {
+[[nodiscard]] constexpr bool is_prime(std::size_t n) noexcept {
   if (n < 2) return false;
   if (n == 2) return true;
   if (n % 2 == 0) return false;
-  const auto sqrt_n = static_cast<std::size_t>(std::sqrt(n));
-  for (std::size_t i = 3; i < sqrt_n; i += 2) {
+  for (std::size_t i = 3; i * i < n; i += 2) {
     if (n % i == 0) return false;
   }
   return true;

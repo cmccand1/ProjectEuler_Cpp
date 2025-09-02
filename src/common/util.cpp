@@ -1,7 +1,7 @@
 #include "euler/util.hpp"
 
+
 std::vector<bool> sieve_of_eratosthenes(unsigned int n) {
-  assert(n > 0);
   const auto size = static_cast<std::vector<bool>::size_type>(n + 1);
   std::vector<bool> is_prime(size, true);
   is_prime[0] = is_prime[1] = false;
@@ -15,7 +15,6 @@ std::vector<bool> sieve_of_eratosthenes(unsigned int n) {
 }
 
 unsigned long long nth_prime(std::size_t n) {
-  assert(n > 0);
   if (n == 1) return 2;
 
   // Rosser's Theorem for estimate

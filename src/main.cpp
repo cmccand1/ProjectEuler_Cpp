@@ -8,6 +8,38 @@
 #include <cassert>
 #include "euler/problem.hpp"
 
+// ANSI escape codes
+constexpr auto RESET = "\033[0m";
+constexpr auto GREEN = "\033[32m";
+constexpr auto RED = "\033[31m";
+
+template<class Rep, class Period>
+void log_result(int id,
+                const std::string &name,
+                const std::string &ans,
+                const std::string &note,
+                std::chrono::duration<Rep, Period> dur) {
+
+  std::string note_colored = std::string(note);
+  if (note == "[OK]") {
+    note_colored = std::string(GREEN) + std::string(note) + RESET;
+  } else {
+    note_colored = std::string(RED) + std::string(note) + RESET;
+  }
+
+  // Pick column widths big enough for your data, or compute dynamically
+  constexpr int name_width = 30;
+  constexpr int ans_width = 15;
+  constexpr int note_width = 15;
+  constexpr int time_width = 6;
+
+  std::cout << "P" << std::setw(3) << id
+      << " - " << std::setw(name_width) << std::left << name
+      << " => " << std::setw(ans_width) << std::left << ans
+      << std::setw(note_width) << std::left << note_colored
+      << std::setw(time_width) << std::right << dur.count() << " ms\n";
+}
+
 // Load answers.txt once and cache it for lookups
 static std::unordered_map<int, std::string> load_answers() {
   std::unordered_map<int, std::string> out;
@@ -79,7 +111,7 @@ static void run_one(const int id) {
     const std::string &expected = it->second; // may be empty if unknown
     if (!expected.empty()) {
       if (ans == expected) {
-        note = " [OK]";
+        note = "[OK]";
       } else {
         std::cerr << "Incorrect answer for Problem " << id << " (" << prob->
             name()
@@ -90,9 +122,11 @@ static void run_one(const int id) {
     }
   }
 
-  std::cout << "P" << id << " - " << prob->name() << " => " << ans
-      << note << " (" << ms.count() << " ms)\n";
+  log_result(id, prob->name(), ans, note, ms);
+  // std::cout << "P" << id << " - " << prob->name() << " => " << ans
+  //     << note << " (" << ms.count() << " ms)\n";
 }
+
 
 int main(const int argc, char **argv) {
   if (argc == 1) {

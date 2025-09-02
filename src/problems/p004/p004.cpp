@@ -10,22 +10,24 @@ class P004 final : public IProblem {
     }
 
     [[nodiscard]] std::string solve() override {
-      long long max_pal = -1;
-      for (int i = 999; i > 99; --i) {
-        for (int j = i; j > 99; --j) {
+      constexpr int THREE_DIGIT_MAX = 999;
+      constexpr int THREE_DIGIT_MIN = 100;
+
+      long long max_product = -1;
+      for (int i = THREE_DIGIT_MAX; i >= THREE_DIGIT_MIN; --i) {
+        for (int j = i; j >= THREE_DIGIT_MIN; --j) {
           const long long product = i * j;
-          if (product <= max_pal) break;
+          if (product <= max_product) break; // ensure next work is worth it
           if (is_palindrome_fast(product)) {
-            max_pal = product;
+            max_product = product;
           }
         }
       }
-      return std::to_string(max_pal);
+      return std::to_string(max_product);
     }
 };
 
-const REGISTER_PROBLEM (
-4
-,
-P004
+const REGISTER_PROBLEM(
+  4,
+  P004
 );

@@ -14,7 +14,6 @@ class P005 final : public IProblem {
         // check for divisibility by each number in the range [1, 20], skipping
         // a few already known divisors and skipping by multiples of 20
         for (int i = 19; i >= 3; --i) {
-          if (candidate)
             if (candidate % i != 0) {
               candidate += 20;
               break;

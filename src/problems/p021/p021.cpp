@@ -1,8 +1,6 @@
-#include <cassert>
-#include <iostream>
-
-#include "euler/problem.hpp"
+#include <vector>
 #include <string>
+#include "euler/problem.hpp"
 
 class P021 final : public IProblem {
   public:
@@ -13,20 +11,19 @@ class P021 final : public IProblem {
     [[nodiscard]] std::string solve() override {
       constexpr std::size_t N = 10'000;
 
-      // pds[n] = proper divisors of n
-      std::vector<unsigned long> pds(N, 0);
-      // for every number less than N
-      for (std::size_t i = 0; i < N; ++i) {
-        // sum the proper divisors of that number and store in the table
-        for (std::size_t j = 0; j < i; ++j) {
-          if (i % j == 0) pds[i] += j;
+      // sum_divs[n] = sum of proper divisors of n
+      std::vector<std::size_t> sum_divs(N, 0);
+      // Start from 1 (proper divisor for all multiples >= 2)
+      for (std::size_t d = 1; d < N / 2 + 1; ++d) {
+        for (std::size_t multiple = d * 2; multiple < N; multiple += d) {
+          sum_divs[multiple] += d;
         }
       }
 
-      // find the amicable sum < N
       std::size_t amicable_sum = 0;
-      for (std::size_t i = 0; i < N; ++i) {
-        if (i != pds[i] && i == pds[pds[i]]) {
+      for (std::size_t i = 2; i < N; ++i) {
+        if (const std::size_t s = sum_divs[i];
+          s != i && s < N && sum_divs[s] == i) {
           amicable_sum += i;
         }
       }

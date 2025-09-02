@@ -11,7 +11,8 @@ class P007 final : public IProblem {
     [[nodiscard]] std::string name() const override { return "10 001st Prime"; }
 
     [[nodiscard]] std::string solve() override {
-      return std::to_string(nth_prime(10'001));
+      constexpr unsigned long long N = 10'001;
+      return std::to_string(nth_prime(N));
     }
 };
 
